@@ -1,19 +1,14 @@
 ﻿@page "/"
 @using BlazorCountdown.Client.Shared
-@using BlazorCountdown.Components.Shared
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Countdown</PageTitle>
 
 <div class="row pt-5">
-    <div class="col-sm-5 d-flex flex-column gap-3 mx-auto">
+    <div class="col-sm-6 d-flex flex-column gap-3 mx-auto">
         <img alt="logo" class="mx-auto" src="pokemon.png" style="height: 150px;" />
 
         <h1 class="h4 text-center text-white">Launching soon</h1>
 
         <CountdownTimer />
-
-        <NotifyForm />
-
-        <SocialLink />
     </div>
 </div>

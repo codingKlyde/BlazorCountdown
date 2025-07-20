@@ -1,7 +1,92 @@
-﻿@rendermode InteractiveWebAssembly
+﻿@inject IJSRuntime JsRuntime
+@implements IDisposable
+@rendermode InteractiveWebAssembly
 
-<h3>CountdownTimer</h3>
+@if (!_renderedOnClient)
+{
+    <h5 class="text-center text-white">Launching at @_launchTime.ToString("MMM dd, yyyy hh:mm:ss tt")</h5>
+}
+else
+{
+    if (!_isLaunched)
+    {
+        <h5 class="text-center text-white">@_launchTime</h5>
+   
+        <div class="row">
+            <div class="col">
+                <div class="time-section bg-white d-flex flex-column justify-content-center align-items-center">
+                    <span class="">@_remainingTime.Days.ToString().PadLeft(2, '0')</span>
+                    <span class="">Days</span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="time-section bg-white d-flex flex-column justify-content-center align-items-center">
+                    <span class="">@_remainingTime.Hours.ToString().PadLeft(2, '0')</span>
+                    <span class="">Hours</span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="time-section bg-white d-flex flex-column justify-content-center align-items-center">
+                    <span class="">@_remainingTime.Minutes.ToString().PadLeft(2, '0')</span>
+                    <span class="">Minutes</span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="time-section bg-white d-flex flex-column justify-content-center align-items-center">
+                    <span class="">@_remainingTime.Seconds.ToString().PadLeft(2, '0')</span>
+                    <span class="">Seconds</span>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <h5 class="text-center text-white">LAUNCHED!</h5>
+    }
+}
 
 @code {
+    private DateTime _launchTime = new DateTime(2025, 8, 8, 7, 30, 0, DateTimeKind.Utc);
+    private DateTime _clientTime = DateTime.UtcNow;
+    private bool _renderedOnClient;
+    private TimeSpan _remainingTime = TimeSpan.Zero;
+    private Timer? _timer;
+    private bool _isLaunched;
 
+    private class BrowserDateTime
+    {
+        public int year { get; set; }
+        public int month { get; set; }
+        public int day { get; set; }
+        public int hour { get; set; }
+        public int minute { get; set; }
+        public int second { get; set; }
+    }
+
+    public void Dispose() => _timer?.Dispose();
+
+    private void UpdateCountdown(object? state)
+    {
+        _clientTime = _clientTime.AddSeconds(1);
+        _remainingTime = _launchTime - _clientTime;
+
+        if (_remainingTime <= TimeSpan.Zero)
+        {
+            _timer!.Dispose();
+            _isLaunched = true;
+        }
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var result = await JsRuntime.InvokeAsync<BrowserDateTime>("window.getBrowserDateTime");
+            _clientTime = new DateTime(result.year, result.month, result.day, result.hour, result.minute, result.second);
+            _renderedOnClient = true;
+            _timer = new Timer(UpdateCountdown, state: null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        }
+    }
 }
